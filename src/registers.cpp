@@ -15,3 +15,11 @@
             // TODO: Exception handling out of bounds
         }
     }
+
+    void Registers::setIndex(uint16_t newIndex) {
+        index = newIndex;
+    }
+
+    uint16_t Registers::getIndex() {
+        return index;
+    }
