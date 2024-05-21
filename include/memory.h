@@ -13,6 +13,8 @@ class Memory {
 
         void initialize_font();
 
+
+
     private:
         uint8_t memory[4096];
 
