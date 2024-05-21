@@ -20,14 +20,17 @@
 
         switch(operand) {
             case 0x0: 
-                //code block
+                if (instruction == 0x00E8) {
+                    display.clearDisplay();
+                }
                 break;
 
             case 0x1: 
-                //code block
+                pc = nnn; // jump
                 break;
             
             case 0x2: 
+
                 //code block
                 break;
 
@@ -44,10 +47,11 @@
                 break;
 
             case 0x6: 
-                //code block
+                registers.write(x,nn); // set register value
                 break;
 
             case 0x7: 
+                registers.write(x, registers.read(x) + nn); // add nn to register 
                 //code block
                 break;
 
@@ -61,6 +65,7 @@
             
             case 0xA: 
                 //code block
+                registers.setIndex(nnn);
                 break;
                 
             case 0xB: 
@@ -72,7 +77,26 @@
                 break;
 
             case 0xD: 
+                // TODO: DRAW
                 //code block
+                int x = registers.read(CPU::x);
+                int y = registers.read(CPU::y);
+                int8_t mask = 0x1;
+                uint8_t sprite_data;
+                registers.write(0xf, 0);
+
+                for (int sprite_height = 0; sprite_height < n; sprite_height++) {
+                    for (int pixel_number = 7; pixel_number >= 0; pixel_number--) {
+                        sprite_data = memory.read(registers.getIndex() + sprite_height);
+                        uint8_t pixel = mask & (sprite_data >> pixel_number); 
+                        if (pixel == 1) {
+                            if (display.flipPixel((x + pixel_number) % 64, (y + sprite_height) % 32)) {
+                                registers.write(0xf, 1);
+                            }
+                        }
+                    }
+                }
+
                 break;
 
             case 0xE: 
@@ -88,8 +112,4 @@
         }
 
         
-    }
-
-    void CPU::execute() {
-
     }
