@@ -4,6 +4,7 @@
 
 #include "memory.h"
 #include "registers.h"
+#include "display.h"
 #include <iostream>
 #include <stack>
 
@@ -15,6 +16,7 @@ class CPU {
 
     private:
         Memory memory;
+        Display display;
         Registers registers;
         std::stack<uint8_t> stack;
 
