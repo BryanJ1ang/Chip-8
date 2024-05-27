@@ -11,12 +11,15 @@
 class CPU {
 
     public:
-        uint16_t fetch();
+        void fetch();
         void decodeExecute();
-
-    private:
+        CPU();
         Memory memory;
         Display display;
+
+
+    private:
+        
         Registers registers;
         std::stack<uint8_t> stack;
 
@@ -27,7 +30,7 @@ class CPU {
         uint8_t y; // third nibble - used for register
         uint8_t n; // fourth nibble
         uint8_t nn; // second byte (third and fourth nibble)
-        uint8_t nnn; // second, third, fourth nibble (12 bits) memory address
+        uint16_t nnn; // second, third, fourth nibble (12 bits) memory address
 
 };
 
