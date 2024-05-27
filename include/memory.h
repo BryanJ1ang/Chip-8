@@ -1,6 +1,10 @@
 #ifndef memory_h
 #define memory_h
 #include <cstdint>
+#include <iostream>
+#include <fstream>
+#include <array>
+
 
 class Memory {
     public:
@@ -13,12 +17,12 @@ class Memory {
 
         void initialize_font();
 
+        bool loadProgram(const std::string& filename);
+
 
 
     private:
-        uint8_t memory[4096];
-
-
+    std::array<uint8_t, 4096> memory;
 
 };
 

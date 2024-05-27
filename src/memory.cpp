@@ -2,8 +2,6 @@
 #include "memory.h"
 #include <iostream>
 
-using std::cout, std::endl;
-
     void Memory::initialize_font() {
         uint8_t fonts[] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -34,6 +32,7 @@ using std::cout, std::endl;
 
     Memory::Memory() {
         Memory::initialize_font();
+        memory = {};
     }
 
 
@@ -42,7 +41,6 @@ using std::cout, std::endl;
         if (address < 4095) {
             return memory[address];
         } else {
-            std::cout << "Read address out of Bounds" << std::endl;
             return 0; // TODO: handle out of bounds
         }
     }
@@ -51,7 +49,36 @@ using std::cout, std::endl;
         if (address < 4095) {
             memory[address] = data;
         } else {
-            std::cout << "Write address out of Bounds" << std::endl;
             // TODO: handle out of bounds
         }
+    }
+
+    bool Memory::loadProgram(const std::string& filename) {
+        std::ifstream file(filename, std::ios::binary);
+        if (!file.is_open()) {
+            std::cerr << "Failed to open file: " << filename << '\n';
+            return false;
+        }
+
+        // Go to the end of the file to determine its size
+        file.seekg(0, std::ios::end);
+        size_t fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        // Ensure the file is not too big for the available memory
+        if (fileSize > sizeof(memory) - 0x200) {
+            std::cerr << "ROM is too large to fit in memory\n";
+            return false;
+        }
+
+        // Read the file contents into the memory starting at 0x200
+        file.read(reinterpret_cast<char*>(&memory[0x200]), fileSize);
+
+            if (file.gcount() != fileSize) {
+        std::cerr << "Failed to read the entire file\n";
+        return false;
+    }
+    
+        file.close();
+        return true;
     }

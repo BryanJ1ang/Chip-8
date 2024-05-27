@@ -2,6 +2,7 @@
 #define registers_h
 
 #include <cstdint>
+#include <array>
 
 class Registers {
 
@@ -9,11 +10,12 @@ class Registers {
         uint8_t read(uint8_t address);
         void write(uint8_t address, uint8_t data);
         void setIndex(uint16_t newIndex);
-        uint16_t Registers::getIndex();
+        uint16_t getIndex();
+        Registers();
 
 
     private:
-        uint8_t registers[16];
+        std::array<uint8_t, 16> registers;
         uint16_t index;
 
 };
