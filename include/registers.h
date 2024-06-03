@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <array>
+#include <thread>
+#include <chrono>
 
 class Registers {
 
@@ -12,6 +14,8 @@ class Registers {
         void setIndex(uint16_t newIndex);
         uint16_t getIndex();
         Registers();
+  
+
 
 
     private:
