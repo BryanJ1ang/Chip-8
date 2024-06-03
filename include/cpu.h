@@ -5,6 +5,7 @@
 #include "memory.h"
 #include "registers.h"
 #include "display.h"
+#include "timer.h"
 #include <iostream>
 #include <stack>
 
@@ -16,12 +17,13 @@ class CPU {
         CPU();
         Memory memory;
         Display display;
+        Timer timer;
 
 
     private:
         
         Registers registers;
-        std::stack<uint8_t> stack;
+        std::stack<uint16_t> stack; 
 
         uint16_t pc;
         uint16_t instruction;
@@ -31,6 +33,9 @@ class CPU {
         uint8_t n; // fourth nibble
         uint8_t nn; // second byte (third and fourth nibble)
         uint16_t nnn; // second, third, fourth nibble (12 bits) memory address
+
+        uint8_t keyTranslate(SDL_Keycode); // converts SDL keyboard event scanCode to Chip-8 key value
+
 
 };
 
