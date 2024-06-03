@@ -45,7 +45,6 @@
     }
 
     bool Display::flipPixel(int x, int y) {
-        std::cout << "Changing Pixel (" << x << "," << y << ")" << std::endl;
         const int pixel_size = 10;
         SDL_Rect rect;
         rect.x = x * pixel_size;
