@@ -41,6 +41,7 @@
         if (address < 4095) {
             return memory[address];
         } else {
+            std::cout << "invalid memory read" << std::endl;
             return 0; // TODO: handle out of bounds
         }
     }
@@ -49,7 +50,7 @@
         if (address < 4095) {
             memory[address] = data;
         } else {
-            // TODO: handle out of bounds
+             std::cout << "invalid memory write" << std::endl;
         }
     }
 
