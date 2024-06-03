@@ -1,7 +1,11 @@
 #include "cpu.h"
 #include "memory.h"
 #include <iomanip>
+#include "timer.h"
 #include "registers.h"
+
+
+
 
      CPU::CPU() {
         std::stack<uint8_t> stack;
@@ -9,6 +13,9 @@
     }
 
     void CPU::fetch() {
+        std::cout << "memory read: 0x" 
+        << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(pc) << std::endl;
+        operand = (0xF000 & instruction) >> 12;        
         uint8_t highByte = memory.read(pc);
         uint8_t lowByte = memory.read(pc + 1);
 
@@ -17,7 +24,8 @@
     }
 
     void CPU::decodeExecute() {
-        std::cout << instruction << std::endl;
+        std::cout << "instruction: 0x" 
+        << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(instruction) << std::endl;
         operand = (0xF000 & instruction) >> 12;
         x = (0x0F00 & instruction) >> 8;
         y = (0x00F0 & instruction) >> 4;
@@ -39,8 +47,16 @@
 
         switch(operand) {
             case 0x0: 
-                if (instruction == 0x00E8) {
+                if (instruction == 0x00E0) {
                     display.clearDisplay();
+                } else if (instruction == 0x00ee) {
+                    if (!stack.empty()) {
+                        pc = stack.top();
+                        stack.pop();
+                        std::cout << "Returned to pc: " << pc << std::endl;
+                    } else {
+                        std::cerr << "Error: Attempt to return from subroutine without previous call!" << std::endl;
+                    }
                 }
                 break;
 
@@ -49,74 +65,120 @@
                 pc = nnn; // jump
                 break;
             
-            case 0x2: 
-
+            case 0x2: // branch
+                std:: cout << "pushing stack : " << nnn << std::endl;
+                stack.push(pc);
+                pc = nnn;
                 //code block
                 break;
 
-            case 0x3: 
-                //code block
+            case 0x3: // skip if x == nn
+                    std::cout << static_cast<int>(registers.read(x)) << std::endl;
+                if (registers.read(x) == nn) {
+                    pc += 2;
+                }
                 break;
 
-            case 0x4: 
-                //code block
+            case 0x4: // skip if x != nn
+            std::cout << static_cast<int>(registers.read(x)) << std::endl;
+                if (registers.read(x) != nn) {
+                    pc += 2;
+                }
                 break;
 
-            case 0x5: 
-                //code block
+            case 0x5: // skip if vx == vy
+                if (registers.read(x) == registers.read(y)) {
+                    pc += 2;
+                }
                 break;
 
-            case 0x6: 
-                std:: cout << "0x6 set register nn: " << nn << std::endl;
+            case 0x6: // set register
                 registers.write(x,nn); // set register value
                 break;
 
-            case 0x7: 
-                std:: cout << "0x7 adding nn to register: " << nn << std::endl;
-
+            case 0x7: // add to register
                 registers.write(x, registers.read(x) + nn); // add nn to register 
-                //code block
                 break;
 
-            case 0x8: 
-                //code block
-                break;
+            case 0x8: {
+                uint8_t vx = registers.read(x);
+                uint8_t vy = registers.read(y);
+                if (n == 0) {
+                    registers.write(x, registers.read(y));
+                } else if (n == 1) { // bitwise OR
+                    registers.write(x, registers.read(x) | registers.read(y));
+                } else if (n == 2) { // AND
+                    registers.write(x, registers.read(x) & registers.read(y));
+                } else if (n == 3) { // XOR
+                    registers.write(x, registers.read(x) ^ registers.read(y));
+                } else if (n == 4) { // ADD
+                    registers.write(x, vy + vx);
+                    if (255 - vx < vy) {
+                        registers.write(0xf, 1);
+                    } else {
+                        registers.write(0xf, 0);
+                    }
+                } else if (n == 5) { // SUBTRACT vx - vy
+                    registers.write(x, vx - vy);
+                         if (vx >= vy) {
+                        registers.write(0xf, 1);
+                    } else {
+                        registers.write(0xf, 0);
+                    }
+                } else if (n == 7) { // SUBTRACT vy - vx
+                    registers.write(x, vy - vx);
 
+                    if (vy >= vx) {
+                        registers.write(0xf, 1);
+                    } else {
+                        registers.write(0xf, 0);
+                    }               
+                         
+                } else if (n == 6) {
+                    registers.write(x, vx >> 1);
+                    registers.write(0xf, vx & 0x1);                    
+                } else if (n == 0xE) {
+                    registers.write(x, vx << 1);   
+                    registers.write(0xf, (vx & 0x80) >> 7);                                    
+                }
+                break;
+            }
             case 0x9: 
-                //code block
+                if (registers.read(x) != registers.read(y)) {
+                    pc += 2;
+                }
                 break;
             
-            case 0xA: 
-                //code block
+            case 0xA: // set index register
                 registers.setIndex(nnn);
                 break;
                 
             case 0xB: 
-                //code block
+                pc = nnn + registers.read(0);
                 break;
 
-            case 0xC: 
-                //code block
+            case 0xC: {
+                srand((unsigned) time(NULL));
+                int random =  (rand() % 255);
+                registers.write(x, random & nn);
+            }
                 break;
 
             case 0xD: 
                 // TODO: DRAW
                 //code block
                 {
-                std::cout << "0xD draw instruction" << std::endl;
                     
                 int x = registers.read(this->x);
                 int y = registers.read(this->y);
                 int8_t mask = 0x1;
                 uint8_t sprite_data;
                 registers.write(0xf, 0);
-                // AAAA AAA=
-                // 
+        
                 for (int sprite_height = 0; sprite_height < n; sprite_height++) {
                     for (int pixel_number = 7; pixel_number >= 0; pixel_number--) {
                         sprite_data = memory.read(registers.getIndex() + sprite_height);
                         uint8_t pixel = mask & (sprite_data >> pixel_number); 
-                        std::cout << "about to draw: "<< pixel << std::endl;
                         if (pixel == 1) {
                             if (display.flipPixel((x + abs(pixel_number - 7)) % 64, (y + sprite_height) % 32)) {
                                 registers.write(0xf, 1);
@@ -126,20 +188,121 @@
                     }
                     
                 }
+                
 }
-                break;
+            break;
 
             case 0xE: 
-                //code block
-                break;
+                if (nn == 0x9e) {
+                            SDL_Event event;
+                            while (SDL_PollEvent(&event)) {
+                                if (event.type == SDL_KEYDOWN) {
+                                    std::cout << "scancode: " << event.key.keysym.sym << std::endl;
+                                    uint8_t key = keyTranslate(event.key.keysym.sym);
+                                    std::cout << "key pressed: " << static_cast<int>(key) << std::endl;                                    
+                                    if (key == registers.read(x)) {
+                                        std::cout << "key skipped: " << static_cast<int>(key) << std::endl;                                   
+                                        pc += 2;
+                                        break;
+                                    }
+                                }   
+                            }
+                        
+                    } else if (nn == 0xa1) {
+                            SDL_Event event;
+                            bool keyMatched = false;
+                            while (SDL_PollEvent(&event)) {
+                                if (event.type == SDL_KEYDOWN) { 
+                                    std::cout << "Scancode: " << event.key.keysym.sym << std::endl;
+                                    uint8_t key = keyTranslate(event.key.keysym.sym);
+                                    std::cout << "Key pressed: " << static_cast<int>(key) << std::endl;
+                                    if (key == registers.read(x)) {
+                                        std::cout << "Key matched: " << static_cast<int>(key) << std::endl;
+                                        keyMatched = true;
+                                        break;
+                                    }
+                                }
+                            }
 
-            case 0xF: 
-                //code block
-                break;
+                            // Only increment pc if no key matching the value in register x was pressed.
+                            if (!keyMatched) {
+                                std::cout << "No matching key pressed. Incrementing pc." << std::endl;
+                                pc += 2;
+                            }
+                    }
+                    break;
+        
 
-                
-            
+            case 0xF:                    
+                    if (nn == 0x0a) {
+                        SDL_Event event;
+                        while (1) {
+                            SDL_WaitEvent(&event);
+                            if (event.type == SDL_KEYDOWN) {
+                                std::cout << "scancode: " << event.key.keysym.sym << std::endl;
+                                uint8_t key = keyTranslate(event.key.keysym.sym);
+                                std::cout << "key pressed: " << key << std::endl;
+                                if (key != 0) {
+                                    registers.write(x, key);
+                                    break;
+                                }
+                            }
+                        }   
+                    } else if (nn == 0x07) {
+                        registers.write(x, timer.delay_timer);
+                        
+                    } else if (nn == 0x15) {
+                        timer.delay_timer = registers.read(x);
+                    } else if (nn == 0x18) {
+                        timer.sound_timer = registers.read(x);
+                    } else if (nn == 0x1e) {
+                        registers.setIndex(registers.getIndex() + registers.read(x));
+                    } else if (nn == 0x29) {
+                        registers.setIndex(0x50 + 5 * registers.read(x));
+                    } else if (nn == 0x33) {
+                        uint8_t vx = registers.read(x);
+                        memory.write(registers.getIndex() + 2, vx % 10); // least significant decimal digit
+                        memory.write(registers.getIndex() + 1, (vx / 10) % 10); // middle decimal digit
+                        memory.write(registers.getIndex(), vx / 100); // most signficant decimal digit
+                    } else if (nn == 0x55) {
+                        for (uint8_t i = 0; i <= x; ++i) {
+                            memory.write(registers.getIndex() + i, registers.read(i));
+                        }
+
+                    } else if (nn == 0x65) {
+                        for (uint8_t i = 0; i <= x; ++i) {
+                            registers.write(i, memory.read(registers.getIndex() + i));
         }
 
-        
+                    }
+                    break;
+                
+        }
     }
+    
+
+uint8_t CPU::keyTranslate(SDL_Keycode key) {
+    switch (key) {
+        case SDLK_1: return 0x1; // '1'
+        case SDLK_2: return 0x2; // '2'
+        case SDLK_3: return 0x3; // '3'
+        case SDLK_4: return 0xC; // '4'
+        
+        case SDLK_q: return 0x4; // 'Q'
+        case SDLK_w: return 0x5; // 'W'
+        case SDLK_e: return 0x6; // 'E'
+        case SDLK_r: return 0xD; // 'R'
+        
+        case SDLK_a: return 0x7; // 'A'
+        case SDLK_s: return 0x8; // 'S'
+        case SDLK_d: return 0x9; // 'D'
+        case SDLK_f: return 0xE; // 'F'
+        
+        case SDLK_z: return 0xA; // 'Z'
+        case SDLK_x: return 0x0; // 'X'
+        case SDLK_c: return 0xB; // 'C'
+        case SDLK_v: return 0xF; // 'V' 
+
+        default : return 0;
+    }
+}
