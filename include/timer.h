@@ -3,8 +3,8 @@
 
 class Timer {
     public:
-        int delay_timer = 0;
-        int sound_timer= 0;
+        uint8_t delay_timer = 0;
+        uint8_t sound_timer = 0;
 
 
 };
