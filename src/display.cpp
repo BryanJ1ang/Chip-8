@@ -29,11 +29,12 @@
 
     void Display::clearDisplay() {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);    
+        SDL_RenderClear(renderer);   
+        colors = {}; 
     }
 
     bool Display::isOpen() {
-    return is_open;
+        return is_open;
     }
 
     void Display::setClosed() {
@@ -64,9 +65,6 @@
         return flag;
     }
 
-    bool isWhite(int x, int y) {
-        return false; // stub
-    }
 
 
 
