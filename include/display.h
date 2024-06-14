@@ -11,7 +11,7 @@ class Display {
         ~Display();
         void update();
         bool flipPixel(int x, int y);
-        std::array<std::array<int, 32>, 64> colors;
+        std::array<std::array<bool, 32>, 64> colors;
         bool isOpen();
         void setClosed();
 
