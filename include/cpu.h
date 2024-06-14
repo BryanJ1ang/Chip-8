@@ -18,7 +18,8 @@ class CPU {
         Memory memory;
         Display display;
         Timer timer;
-
+        uint8_t key;
+        uint8_t keyTranslate(SDL_Keycode); // converts SDL keyboard event scanCode to Chip-8 key value
 
     private:
         
@@ -34,7 +35,7 @@ class CPU {
         uint8_t nn; // second byte (third and fourth nibble)
         uint16_t nnn; // second, third, fourth nibble (12 bits) memory address
 
-        uint8_t keyTranslate(SDL_Keycode); // converts SDL keyboard event scanCode to Chip-8 key value
+
 
 
 };
