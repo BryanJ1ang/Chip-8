@@ -8,8 +8,8 @@
 
 
      CPU::CPU() {
-        std::stack<uint8_t> stack;
         pc = 0x200;
+        key = 0xff;
     }
 
     void CPU::fetch() {
@@ -106,11 +106,11 @@
                 if (n == 0) {
                     registers.write(x, registers.read(y));
                 } else if (n == 1) { // bitwise OR
-                    registers.write(x, registers.read(x) | registers.read(y));
+                    registers.write(x, vx | vy);
                 } else if (n == 2) { // AND
-                    registers.write(x, registers.read(x) & registers.read(y));
+                    registers.write(x, vx & vy);
                 } else if (n == 3) { // XOR
-                    registers.write(x, registers.read(x) ^ registers.read(y));
+                    registers.write(x, vx ^ vy);
                 } else if (n == 4) { // ADD
                     registers.write(x, vy + vx);
                     if (255 - vx < vy) {
@@ -154,7 +154,7 @@
                 break;
                 
             case 0xB: 
-                pc = nnn + registers.read(0);
+                pc = nnn + registers.read(x);
                 break;
 
             case 0xC: {
@@ -169,64 +169,42 @@
                 //code block
                 {
                     
-                int x = registers.read(this->x);
-                int y = registers.read(this->y);
-                int8_t mask = 0x1;
+                int x = registers.read(this->x) % 64;
+                int y = registers.read(this->y) % 32;
                 uint8_t sprite_data;
                 registers.write(0xf, 0);
         
                 for (int sprite_height = 0; sprite_height < n; sprite_height++) {
+                    sprite_data = memory.read(registers.getIndex() + sprite_height);
+
                     for (int pixel_number = 7; pixel_number >= 0; pixel_number--) {
-                        sprite_data = memory.read(registers.getIndex() + sprite_height);
-                        uint8_t pixel = mask & (sprite_data >> pixel_number); 
-                        if (pixel == 1) {
-                            if (display.flipPixel((x + abs(pixel_number - 7)) % 64, (y + sprite_height) % 32)) {
-                                registers.write(0xf, 1);
+                        
+                        uint8_t pixel = 0x1 & (sprite_data >> pixel_number); 
+                            if (pixel == 1) {
+                                if (display.flipPixel((x + 7 - pixel_number), (y + sprite_height))) {
+                                    registers.write(0xf, 1);
+                                }
+                            }
+                            if (x + 7 - pixel_number == 63) {
+                                break;
                             }
                         }
-                    
+                    if (y + sprite_height == 31) {
+                        break;
                     }
-                    
                 }
-                
-}
+            }
+
             break;
 
             case 0xE: 
                 if (nn == 0x9e) {
-                            SDL_Event event;
-                            while (SDL_PollEvent(&event)) {
-                                if (event.type == SDL_KEYDOWN) {
-                                    std::cout << "scancode: " << event.key.keysym.sym << std::endl;
-                                    uint8_t key = keyTranslate(event.key.keysym.sym);
-                                    std::cout << "key pressed: " << static_cast<int>(key) << std::endl;                                    
-                                    if (key == registers.read(x)) {
-                                        std::cout << "key skipped: " << static_cast<int>(key) << std::endl;                                   
-                                        pc += 2;
-                                        break;
-                                    }
-                                }   
+                            if (key == registers.read(x)) {
+                                pc += 2;
                             }
                         
                     } else if (nn == 0xa1) {
-                            SDL_Event event;
-                            bool keyMatched = false;
-                            while (SDL_PollEvent(&event)) {
-                                if (event.type == SDL_KEYDOWN) { 
-                                    std::cout << "Scancode: " << event.key.keysym.sym << std::endl;
-                                    uint8_t key = keyTranslate(event.key.keysym.sym);
-                                    std::cout << "Key pressed: " << static_cast<int>(key) << std::endl;
-                                    if (key == registers.read(x)) {
-                                        std::cout << "Key matched: " << static_cast<int>(key) << std::endl;
-                                        keyMatched = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            // Only increment pc if no key matching the value in register x was pressed.
-                            if (!keyMatched) {
-                                std::cout << "No matching key pressed. Incrementing pc." << std::endl;
+                            if (key != registers.read(x)) {
                                 pc += 2;
                             }
                     }
@@ -235,19 +213,11 @@
 
             case 0xF:                    
                     if (nn == 0x0a) {
-                        SDL_Event event;
-                        while (1) {
-                            SDL_WaitEvent(&event);
-                            if (event.type == SDL_KEYDOWN) {
-                                std::cout << "scancode: " << event.key.keysym.sym << std::endl;
-                                uint8_t key = keyTranslate(event.key.keysym.sym);
-                                std::cout << "key pressed: " << key << std::endl;
-                                if (key != 0) {
-                                    registers.write(x, key);
-                                    break;
-                                }
-                            }
-                        }   
+                        if (key == 0xff) {
+                            pc -= 2;
+                        } else {
+                            registers.write(x, key);
+                        }
                     } else if (nn == 0x07) {
                         registers.write(x, timer.delay_timer);
                         
@@ -303,6 +273,6 @@ uint8_t CPU::keyTranslate(SDL_Keycode key) {
         case SDLK_c: return 0xB; // 'C'
         case SDLK_v: return 0xF; // 'V' 
 
-        default : return 0;
+        default : return 0xff;
     }
 }
